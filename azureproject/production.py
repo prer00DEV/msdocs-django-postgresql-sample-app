@@ -49,3 +49,29 @@ CACHES = {
         },
     }
 }
+
+if AZURE_ACCOUNT_NAME and AZURE_STORAGE_CONNECTION_STRING:
+    DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureBlobStorage'
+    STATICFILES_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+
+    AZURE_STATIC_LOCATION = '' # Ukládat přímo do rootu kontejneru AZURE_STATIC_CONTAINER
+    
+    # URL pro statické soubory přímo z Blob Storage
+    STATIC_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_STATIC_CONTAINER}/'
+
+    # Odebereme WhiteNoise z MIDDLEWARE, pokud tam byl přidán
+    MIDDLEWARE = [m for m in MIDDLEWARE if m != 'whitenoise.middleware.WhiteNoiseMiddleware']
+
+else:
+    # Fallback na WhiteNoise (mělo by se stát jen při chybě konfigurace v Azure)
+    if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
+        try:
+            security_middleware_index = MIDDLEWARE.index('django.middleware.security.SecurityMiddleware')
+            MIDDLEWARE.insert(security_middleware_index + 1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+        except ValueError:
+            MIDDLEWARE.insert(0, 'whitenoise.middleware.WhiteNoiseMiddleware')
+
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STATIC_ROOT = BASE_DIR / 'staticfiles_whitenoise' 
+    if not os.path.exists(STATIC_ROOT):
+        os.makedirs(STATIC_ROOT)
