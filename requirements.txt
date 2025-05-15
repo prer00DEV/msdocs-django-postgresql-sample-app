@@ -3,3 +3,6 @@ psycopg2-binary==2.9.10
 python-dotenv==1.0.1
 whitenoise==6.9.0
 django-redis==5.4.0
+django-storages[azure]
+azure-identity
+azure-mgmt-storage
